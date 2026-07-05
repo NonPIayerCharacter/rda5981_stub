@@ -1,0 +1,7 @@
+build
+*.uvguix.*
+*.map
+*.asm
+*.bin
+*.o
+*.lst

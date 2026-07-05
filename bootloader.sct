@@ -1,0 +1,11 @@
+LR_IRAM1 0x00100000 0x00020000
+{
+  ER_IRAM1 0x00100000 0x00020000
+  {
+   *.o (RESET, +First)
+   *(InRoot$$Sections)
+   .ANY (+RO)
+   .ANY (+XO)
+   .ANY (+RW +ZI)
+  }
+}
