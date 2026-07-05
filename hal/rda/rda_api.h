@@ -109,14 +109,26 @@ typedef struct
 	__I  uint32_t DL_FAST;          /* 0x44 : UART Divisor Adjust when fast clk */
 } RDA_UART_TypeDef;
 
+typedef struct
+{
+  __IO uint32_t WDTCFG;
+} RDA_WDT_TypeDef;
+
 #define RDA_AHB0_BASE         (0x40000000UL)
 #define RDA_APB_BASE          (RDA_AHB0_BASE)
 #define RDA_SCU_BASE          (RDA_APB_BASE  + 0x00000)
 #define RDA_GPIO_BASE         (RDA_APB_BASE  + 0x01000)
+#define RDA_WDT_BASE          (RDA_SCU_BASE  + 0x0000C)
 #define RDA_SCU               ((RDA_SCU_TypeDef       *) RDA_SCU_BASE      )
 #define RDA_GPIO              ((RDA_GPIO_TypeDef      *) RDA_GPIO_BASE     )
+#define RDA_WDT               ((RDA_WDT_TypeDef       *) RDA_WDT_BASE      )
 
 #define UART_BASE ((volatile uint32_t *)0x40012000U)
 #define RXFIFO_EMPTY_MASK (0x01UL << 0)
+
+#define WDT_EN_BIT                  (9)
+#define WDT_CLR_BIT                 (10)
+#define WDT_TMRCNT_OFST             (11)
+#define WDT_TMRCNT_WIDTH            (4)
 
 #endif /*RDA_API_H*/

@@ -5,6 +5,7 @@
 #include <board.h>
 //#include <core_cm4.h>
 #include <drv_uart.h>
+#include <rda_api.h>
 #include <rda5981_bootrom_api.h>
 #include "../../OpenBK7231T_App/libraries/miniz/miniz.h"
 
@@ -260,6 +261,7 @@ int main(void)
 	board_init();
 	void rda_ccfg_ck(void);
 	rda_ccfg_ck();
+	RDA_WDT->WDTCFG &= ~(0x01UL << WDT_EN_BIT);
 	uart_set_baud(115200);
 	sburner_flash_init();
 	while(1) uart_cmd_parser();
