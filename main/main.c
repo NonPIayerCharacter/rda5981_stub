@@ -323,7 +323,7 @@ void uboot_flash_crc32(void* buf)
 	uart_write((unsigned char*)cmd_data_buf, HEAD_SIZE + 4 + 2);
 }
 
-void uboot_flash_xmodem_ul(void* buf)
+void uboot_flash_xmodem_ul(bool isRaw, void* buf)
 {
 	uint8_t block_num = 1;
 	uint8_t resp = 0;
@@ -408,8 +408,14 @@ void uboot_flash_xmodem_ul(void* buf)
 			packet[0] = header;
 			packet[1] = block_num;
 			packet[2] = ~block_num;
-
-			RDA5991H_READ_FLASH(cfg_msg.addr + offset, &packet[3], chunk);
+			if(isRaw)
+			{
+				memcpy(&packet[3], (void*)(cfg_msg.addr + offset), chunk);
+			}
+			else
+			{
+				RDA5991H_READ_FLASH(cfg_msg.addr + offset, &packet[3], chunk);
+			}
 
 			if(chunk < block_size)
 			{
@@ -999,6 +1005,69 @@ abort_decompression:
 	uart_putc(CAN);
 }
 
+
+#define BIT31 (1ul << 31)
+uint16_t efuse_read_page(uint8_t page)
+{
+	volatile uint32_t *reg = (volatile uint32_t *)0x4001301C;
+
+	while (*reg & BIT31);
+
+	*reg = 0x03B80000;
+	for (uint32_t i = 0; i < 0x2000U; ++i){};
+	
+	while (*reg & BIT31);
+
+	uint32_t base = (*reg & 0x0000FF00) | ((page << 4) & 0xFF);
+
+	*reg = 0x02B80000 | base | 0x0E;
+	for (uint32_t i = 0; i < 0x2000U; ++i){};
+
+	while (*reg & BIT31);
+
+	*reg = 0x02B80000 | base | 0x0F;
+	for (uint32_t i = 0; i < 0x2000U; ++i){};
+
+	while (*reg & BIT31);
+
+	*reg = 0x02B80000 | base | 0x0E;
+	for (uint32_t i = 0; i < 0x2000U; ++i){};
+
+	while (*reg & BIT31);
+
+	*reg = 0x02B80000 | base;
+	for (uint32_t i = 0; i < 0x2000U; ++i){};
+
+	while (*reg & BIT31);
+
+	*reg = 0x03BF0000;
+	for (uint32_t i = 0; i < 0x2000U; ++i){};
+
+	while (*reg & BIT31);
+
+	return (uint16_t)(*reg);
+}
+
+void uboot_read_efuse()
+{
+	ACK_msg.magic = ACK_MAGIC;
+	ACK_msg.type = 0x99;
+	ACK_msg.data_len = 32;
+ 
+	memcpy(cmd_data_buf, &ACK_msg, HEAD_SIZE);
+	
+	for (uint8_t page = 0; page < 16; page++)
+	{
+		uint16_t value = efuse_read_page(page);
+
+		cmd_data_buf[HEAD_SIZE + (page * 2 + 0)] = (uint8_t)(value & 0xFF);
+		cmd_data_buf[HEAD_SIZE + (page * 2 + 1)] = (uint8_t)(value >> 8);
+	}
+	cmd_data_buf[HEAD_SIZE + 32] = STATUS_SUCCESS;
+	cmd_data_buf[HEAD_SIZE + 32 + 1] = uboot_mesage_check((unsigned char*)cmd_data_buf, HEAD_SIZE + 32 + 1);
+	uart_write((unsigned char*)cmd_data_buf, HEAD_SIZE + 32 + 2);
+}
+
 int uart_cmd_parser(void)
 {
 	unsigned int i = 0;
@@ -1095,13 +1164,19 @@ int uart_cmd_parser(void)
 				uboot_flash_xmodem_dl(&cmd_data_buf);
 				break;
 			case 0x92:
-				uboot_flash_xmodem_ul(&cmd_data_buf);
+				uboot_flash_xmodem_ul(false, &cmd_data_buf);
 				break;
 			case 0x96:
 				uboot_flash_xmodem_ul_z(&cmd_data_buf);
 				break;
 			case 0x97:
 				uboot_flash_xmodem_dl_z(&cmd_data_buf);
+				break;
+			case 0x98:
+				uboot_flash_xmodem_ul(true, &cmd_data_buf);
+				break;
+			case 0x99:
+				uboot_read_efuse();
 				break;
 
 			default:
