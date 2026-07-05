@@ -1,0 +1,25 @@
+diff --git a/miniz_tdef.c b/miniz_tdef.c
+index 07b43a0..8a7131b 100644
+--- a/miniz_tdef.c
++++ b/miniz_tdef.c
+@@ -27,6 +27,7 @@
+ #include "miniz.h"
+ 
+ #ifndef MINIZ_NO_DEFLATE_APIS
++#define MINIZ_USE_UNALIGNED_LOADS_AND_STORES 1
+ 
+ #ifdef __cplusplus
+ extern "C"
+diff --git a/miniz_tdef.h b/miniz_tdef.h
+index 7dc959b..d7e60ba 100644
+--- a/miniz_tdef.h
++++ b/miniz_tdef.h
+@@ -156,7 +156,7 @@ enum
+         mz_uint16 m_huff_codes[TDEFL_MAX_HUFF_TABLES][TDEFL_MAX_HUFF_SYMBOLS];
+         mz_uint8 m_huff_code_sizes[TDEFL_MAX_HUFF_TABLES][TDEFL_MAX_HUFF_SYMBOLS];
+         mz_uint8 m_lz_code_buf[TDEFL_LZ_CODE_BUF_SIZE];
+-        mz_uint16 m_next[TDEFL_LZ_DICT_SIZE];
++        mz_uint16* m_next;
+         mz_uint16 m_hash[TDEFL_LZ_HASH_SIZE];
+         mz_uint8 m_output_buf[TDEFL_OUT_BUF_SIZE];
+     } tdefl_compressor;

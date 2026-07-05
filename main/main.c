@@ -490,7 +490,7 @@ void uboot_flash_xmodem_ul(void* buf)
 int mz_deflateInit3(mz_streamp pStream, int level, int method, int window_bits, int mem_level, int strategy)
 {
 	tdefl_compressor* pComp;
-	mz_uint comp_flags = TDEFL_COMPUTE_ADLER32 | tdefl_create_comp_flags_from_zip_params(level, window_bits, strategy);
+	mz_uint comp_flags = tdefl_create_comp_flags_from_zip_params(level, window_bits, strategy);
 
 	if(!pStream)
 		return MZ_STREAM_ERROR;
@@ -498,7 +498,7 @@ int mz_deflateInit3(mz_streamp pStream, int level, int method, int window_bits, 
 		return MZ_PARAM_ERROR;
 
 	pStream->data_type = 0;
-	pStream->adler = MZ_ADLER32_INIT;
+	pStream->adler = 0;
 	pStream->msg = NULL;
 	pStream->reserved = 0;
 	pStream->total_in = 0;
