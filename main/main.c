@@ -201,21 +201,35 @@ void sburner_flash_init(void)
 	unsigned char id = status5 & 0xff;
 	switch(id)
 	{
-		default:
+		case 0x13:
+		case 0x33:
+			g_flash_size = 0x80000; break;
 		case 0x14:
+		case 0x34:
+		default:
 			g_flash_size = 0x100000; break;
 		case 0x15:
+		case 0x35:
 			g_flash_size = 0x200000; break;
 		case 0x16:
+		case 0x36:
 			g_flash_size = 0x400000; break;
 		case 0x17:
+		case 0x37:
 			g_flash_size = 0x800000; break;
 		case 0x18:
+		case 0x38:
 			g_flash_size = 0x1000000; break;
 		case 0x19:
+		case 0x39:
 			g_flash_size = 0x2000000; break;
-		case 0x20:
+		case 0x1A:
+		case 0x3A:
 			g_flash_size = 0x4000000; break;
+		case 0x1B:
+			g_flash_size = 0x8000000; break;
+		case 0x1C:
+			g_flash_size = 0x10000000; break;
 	}
 }
 
@@ -403,7 +417,7 @@ void uboot_flash_xmodem_ul(bool isRaw, void* buf)
 		retry = 0;
 		while(retry < 10)
 		{
-			memset(packet, 0xFF, sizeof(packet));
+			memset(packet, 0xFF, 3 + XMODEM_BLOCK_SIZE_1K + 2);
 
 			packet[0] = header;
 			packet[1] = block_num;
@@ -551,6 +565,9 @@ void uboot_flash_xmodem_ul_z(void* buf)
 	ACK_msg.data_len = 0x0000;
 	ACK_msg.CRC8 = uboot_mesage_check((unsigned char*)&ACK_msg, ACK_SIZE - 1);
 
+	uint8_t comp_level = cmd_data_buf[HEAD_SIZE + CFG_SIZE];
+	if(comp_level < 1 || comp_level > 10) comp_level = 5;
+
 	memcpy(&cfg_msg, &(cmd_data_buf[HEAD_SIZE]), CFG_SIZE);
 
 	uart_write((unsigned char*)&ACK_msg, ACK_SIZE);
@@ -596,7 +613,7 @@ void uboot_flash_xmodem_ul_z(void* buf)
 
 	uint32_t remaining = cfg_msg.len;
 
-	if(mz_deflateInit3(&stream, 5, MZ_DEFLATED, -MZ_DEFAULT_WINDOW_BITS, 9, MZ_DEFAULT_STRATEGY) != Z_OK)
+	if(mz_deflateInit3(&stream, comp_level, MZ_DEFLATED, -MZ_DEFAULT_WINDOW_BITS, 9, MZ_DEFAULT_STRATEGY) != Z_OK)
 	{
 		return;
 	}
@@ -619,7 +636,7 @@ void uboot_flash_xmodem_ul_z(void* buf)
 			header = SOH;
 		}
 
-		memset(packet, 0xFF, sizeof(packet));
+		memset(packet, 0xFF, 3 + XMODEM_BLOCK_SIZE_1K + 2);
 
 		packet[0] = header;
 		packet[1] = block_num;
